@@ -1,50 +1,45 @@
 """
-MovieLens Backend - FastAPI Backend
- 
-Endpoints:
-  GET  /movielens/api/movies?search={keyword}       — search movies by title
-  GET  /movielens/api/ratings/{movieId}             — get ratings for a movie
-  POST /movielens/api/movies                        — add a new movie
-  POST /movielens/api/recommendations               — get personalized recommendations
+MovieLens Backend — FastAPI application entry point.
+
+Wires everything together:
+  - initializes the SQLite DB on first startup,
+  - enables CORS (required by the assignment),
+  - mounts the route modules under the `/movielens/api` base path, and
+  - runs uvicorn on port 3000 when executed directly.
+
+Full endpoint paths (base URL http://{domain}:3000/movielens/api):
+  GET  /movielens/api/movies?search={keyword}
+  GET  /movielens/api/ratings/{movieId}
+  POST /movielens/api/movies
+  POST /movielens/api/recommendations
 """
 
-import sqlite3
-from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 
-from typing import Optional
-from contextlib import asynccontextmanager, contextmanager
-import os
-from setup_db import initialize_db
+from db import init_database
+from routes import movies, recommendations
 
-import numpy as np
+# The assignment's base URL is http://{domain}:3000/movielens/api, so every
+# route is mounted under this prefix.
+API_PREFIX = "/movielens/api"
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # runs on startup
+    # Runs on startup: build + populate the DB if it doesn't exist yet.
     print("Starting up...")
-    if not os.path.exists("movielens.db"):
-        print("Initializing database...")
-        initialize_db()
+    init_database()
     yield
-    # runs on shutdown
+    # Runs on shutdown.
     print("Shutting down...")
+
 
 app = FastAPI(title="MovieLens Backend", lifespan=lifespan)
 
-@contextmanager
-def get_db():
-    conn = sqlite3.connect("movielens.db")
-    conn.row_factory = sqlite3.Row  # Enable dict-like access to rows
-    try:
-        yield conn
-    finally:
-        conn.close()
-
-# ------------------------
-# CORS Middleware
-# ------------------------
+# CORS: allow the (file://-served or any-origin) frontend to call the API.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -52,80 +47,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ------------------------
-# define pydantic models
-# ------------------------
-class MovieAdd(BaseModel):
-    title: str
-    genres: str
+# Mount the routers under the API base path.
+app.include_router(movies.router, prefix=API_PREFIX)
+app.include_router(recommendations.router, prefix=API_PREFIX)
 
-class RecommendationRequest(BaseModel):
-    ratings: List[dict]  # List of {"movieId": int, "rating": float}
 
-# ------------------------
-# API Endpoints
-# ------------------------
-@app.get("/movies")
-def get_movies(search: Optional[str] = None):
-    """Search movies by title"""
-    with get_db() as conn:
-        cursor = conn.cursor()
-        if search:
-            cursor.execute("SELECT * FROM movies WHERE title LIKE ?", (f"%{search}%",))
-        else:
-            cursor.execute("SELECT * FROM movies")
-        movies = cursor.fetchall()
-        
-    return {"status": "success", "movies": [dict(movie) for movie in movies]}
+if __name__ == "__main__":
+    # Allows `python main.py` to launch the server on the required port 3000.
+    import uvicorn
 
-@app.get("/ratings/{movie_id}")
-def get_ratings(movie_id: int):
-    """Get ratings for a movie"""
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM ratings WHERE movie_id = ?", (movie_id,))
-        ratings = cursor.fetchall()
-        
-    return {"status": "success", "ratings": [dict(rating) for rating in ratings]}
-
-@app.post("/movies")
-def add_movie(movie: MovieAdd):
-    """Add a new movie"""
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO movies (title, genres) VALUES (?, ?)", (movie.title, movie.genres))
-        conn.commit()
-        movie_id = cursor.lastrowid
-        
-    return {"status": "success", "movie_id": movie_id}
-
-@app.post("/recommendations")
-def get_recommendations(req: RecommendationRequest):
-    """Get personalized recommendations given the ratings that the user provides"""
-    
-    # 0. Store input ratings for user u
-    input_ratings_dict = {r["movieId"]: r["rating"] for r in req.ratings}  # dict {"movieId": int, "rating": float}
-    user_ratings_dict = {}   # list of (userId, movieId, rating) for users who rated the same movies as the input ratings
-    
-    # 1. Find users with overlapping rated movies
-    with get_db() as conn:
-        cursor = conn.cursor()
-        movie_ids = [r["movieId"] for r in req.ratings]
-        placeholders = ",".join("?" for _ in movie_ids)
-        cursor.execute(f"""
-            SELECT userId, movieId, rating 
-            FROM ratings 
-            WHERE movieId IN ({placeholders})
-        """, movie_ids)
-        user_ratings = cursor.fetchall()
-        for row in user_ratings:
-            userId = row["userId"]
-            movieId = row["movieId"]
-            rating = row["rating"]
-            if userId not in user_ratings_dict:
-                user_ratings_dict[userId] = {}
-            user_ratings_dict[userId][movieId] = rating # {userId: {movieId: rating, ...}, ...}
-
-    # 2. Compute Pearson correlation between the input ratings and other users
-    user_similarities = {}  # dict {userId: similarity} (ground truth is the input ratings)
-    
+    uvicorn.run(app, host="0.0.0.0", port=3000)

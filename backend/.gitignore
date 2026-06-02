@@ -1,2 +1,11 @@
-ml-latest-small.zip
+# extracted dataset (re-created from the bundled zip by setup_db.py)
 ml-latest-small/
+
+# generated SQLite database
+movielens.db
+
+# python
+__pycache__/
+*.pyc
+venv/
+.venv/

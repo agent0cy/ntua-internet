@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>MovieLens Explorer</title>
+    <link rel="stylesheet" href="index.css" />
+  </head>
+  <body>
+    <h1>MovieLens Explorer</h1>
+
+    <!-- 1. ADD A MOVIE -->
+    <h2>Add a movie</h2>
+    <p>Type a title and genres (separate genres with "|"), then click Add.</p>
+    Title: <input id="add-title" />
+    Genres: <input id="add-genres" />
+    <button onclick="addMovie()">Add</button>
+    <p id="add-feedback"></p>
+
+    <!-- 2. SEARCH MOVIES -->
+    <h2>Search movies</h2>
+    <p>Type a keyword and click Search.</p>
+    Keyword: <input id="search-input" />
+    <button onclick="searchMovies()">Search</button>
+    <p id="search-feedback"></p>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Title</th>
+          <th>Genres</th>
+          <th>Average</th>
+          <th>Your rating</th>
+        </tr>
+      </thead>
+      <tbody id="search-results"></tbody>
+    </table>
+
+    <!-- 3. YOUR RATINGS -->
+    <h2>Your ratings (<span id="ratings-count">0</span>)</h2>
+    <p>These are kept only in your browser and are used for recommendations.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Movie</th>
+          <th>Rating</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="my-ratings"></tbody>
+    </table>
+
+    <!-- 4. RECOMMENDATIONS -->
+    <h2>Recommendations</h2>
+    <p>Rate at least one movie above, then click the button.</p>
+    <button onclick="getRecommendations()">Get recommendations</button>
+    <p id="rec-feedback"></p>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Title</th>
+          <th>Genres</th>
+          <th>Predicted</th>
+        </tr>
+      </thead>
+      <tbody id="rec-results"></tbody>
+    </table>
+
+    <script src="index.js"></script>
+  </body>
+</html>
