@@ -1,0 +1,103 @@
+' MovieLens Explorer — Sequence Diagrams (one @startuml per flow).
+' Each block renders to its own image, named by the title after @startuml.
+
+@startuml sequence-search
+title Search movies — GET /movies?search=
+actor User
+participant "Browser\n(index.js)" as JS
+participant "Route\n(routes/movies.py)" as API
+database "SQLite\n(movielens.db)" as DB
+
+User -> JS : type keyword, click Search
+JS -> JS : encodeURIComponent(keyword)
+JS -> API : GET /movielens/api/movies?search=kw
+API -> DB : SELECT * FROM movies\nWHERE title LIKE '%kw%'
+DB --> API : matching rows
+API --> JS : {status:"success", movies:[...]}
+JS -> JS : build rows + Show button + rating dropdown
+JS --> User : render results table
+@enduml
+
+@startuml sequence-average
+title View average rating — GET /ratings/{movieId}
+actor User
+participant "Browser\n(index.js)" as JS
+participant "Route\n(routes/movies.py)" as API
+database "SQLite" as DB
+
+User -> JS : click "Show" in a row
+JS -> API : GET /movielens/api/ratings/123
+API -> DB : SELECT * FROM ratings WHERE movieId = 123
+DB --> API : rating rows
+API --> JS : {status:"success", ratings:[...]}
+alt no ratings
+  JS --> User : "no ratings"
+else has ratings
+  JS -> JS : average = sum(rating) / count\n(computed in the browser)
+  JS --> User : show "4.12 (37)"
+end
+@enduml
+
+@startuml sequence-add-movie
+title Add a movie — POST /movies
+actor User
+participant "Browser\n(index.js)" as JS
+participant "Route\n(routes/movies.py)" as API
+database "SQLite" as DB
+
+User -> JS : enter title + genres, click Add
+alt a field is empty
+  JS --> User : "Please type a title and genres." (error)
+else both filled
+  JS -> API : POST /movies {title, genres}
+  API -> API : Pydantic validates MovieAdd
+  API -> DB : INSERT INTO movies(title, genres)
+  DB --> API : lastrowid (auto-assigned id)
+  API --> JS : {status:"success", movieId: 9743}
+  JS --> User : "Added! New movie id: 9743" + clear fields
+end
+@enduml
+
+@startuml sequence-rate
+title Rate a movie — client only (no server call)
+actor User
+participant "Browser\n(index.js)" as JS
+
+User -> JS : pick value in rating dropdown (onchange)
+JS -> JS : myRatings[movieId] = {title, rating}
+JS -> JS : showMyRatings() re-renders the table
+JS --> User : updated "Your ratings" table + count
+note over JS : kept in memory only,\nnever persisted to the DB
+@enduml
+
+@startuml sequence-recommendations
+title Get recommendations — POST /recommendations
+actor User
+participant "Browser\n(index.js)" as JS
+participant "Route\n(recommendations.py)" as API
+participant "Recommender\n(recommender.py)" as REC
+database "SQLite" as DB
+
+User -> JS : click "Get recommendations"
+JS -> JS : build ratings[] from myRatings
+alt no ratings yet
+  JS --> User : "Please rate at least one movie first."
+else
+  JS -> API : POST /recommendations {ratings:[...]}
+  API -> API : validate RecommendationRequest
+  API -> REC : recommend([(movieId, rating), ...])
+  REC -> DB : SELECT ratings WHERE movieId IN (input movies)
+  DB --> REC : overlapping users' ratings
+  REC -> REC : Pearson sim per user;\nkeep positive, >= MIN_COMMON co-rated
+  REC -> REC : sort, take TOP_K neighbours
+  REC -> DB : SELECT ratings WHERE userId IN (neighbours)
+  DB --> REC : neighbour ratings; compute mean_v
+  REC -> REC : predict per unseen movie;\nfilter MIN_SUPPORT; take TOP_N
+  REC -> DB : SELECT title, genres WHERE movieId IN (top ids)
+  DB --> REC : movie info
+  REC --> API : [{movieId, title, genres, predictedRating}]
+  API --> JS : {status:"success", recommendations:[...]}
+  JS -> JS : build table rows
+  JS --> User : render recommendations
+end
+@enduml

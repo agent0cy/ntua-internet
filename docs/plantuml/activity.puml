@@ -1,0 +1,86 @@
+' MovieLens Explorer — Activity Diagrams
+
+@startuml activity-user-session
+title Whole-app user session
+start
+:Open the page;
+repeat
+  switch (Choose an action)
+  case (Add a movie)
+    :Enter title and genres;
+    if (Both fields filled?) then (yes)
+      :POST /movies;
+      :Show new movie id;
+    else (no)
+      :Show error message;
+    endif
+  case (Search movies)
+    :Enter keyword;
+    :GET /movies?search=keyword;
+    :Show results table;
+    switch (Per-row action?)
+    case (Show average)
+      :GET /ratings/{id};
+      :Compute average in browser;
+      :Show average and count;
+    case (Rate a movie)
+      :Pick rating in dropdown;
+      :Save to myRatings (memory only);
+      :Update "Your ratings" table;
+    endswitch
+  case (Get recommendations)
+    if (At least one rating?) then (yes)
+      :POST /recommendations;
+      :Show recommendations table;
+    else (no)
+      :Ask user to rate first;
+    endif
+  endswitch
+repeat while (More actions?) is (yes) not (no)
+stop
+@enduml
+
+@startuml activity-recommend
+title Recommendation algorithm — recommend()
+start
+if (input ratings empty?) then (yes)
+  :return empty list;
+  stop
+else (no)
+endif
+:compute mean_u over input ratings;
+:SELECT users who rated any input movie;
+repeat
+  :consider next candidate user v;
+  if (co-rated >= MIN_COMMON?) then (yes)
+    :Pearson sim on co-rated items;
+    if (sim positive?) then (yes)
+      :keep v as neighbour;
+    else (no)
+      :skip user;
+    endif
+  else (no)
+    :skip user;
+  endif
+repeat while (more candidate users?) is (yes) not (no)
+if (any neighbours kept?) then (no)
+  :return empty list;
+  stop
+else (yes)
+endif
+:sort by sim, take TOP_K neighbours;
+:SELECT all neighbour ratings; compute mean_v;
+repeat
+  :consider next movie not rated by u;
+  :numerator += sim * (rating - mean_v);
+  :denominator += abs(sim);
+  :support += 1;
+repeat while (more candidate movies?) is (yes) not (no)
+:keep movies with support >= MIN_SUPPORT and denominator > 0;
+:predicted = mean_u + numerator / denominator;
+:clamp to [0.5, 5.0];
+:sort by predicted desc, take TOP_N;
+:attach title and genres;
+:return recommendations;
+stop
+@enduml

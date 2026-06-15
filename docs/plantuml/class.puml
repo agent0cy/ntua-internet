@@ -1,0 +1,75 @@
+' MovieLens Explorer — Class Diagram + Module (component) view
+
+@startuml class-model
+title Data model — request models, persistent entities, response DTO
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+package "Request models (Pydantic) — models.py" {
+  class MovieAdd {
+    +title : str
+    +genres : str
+  }
+  class RatingInput {
+    +movieId : int
+    +rating : float
+  }
+  class RecommendationRequest {
+    +ratings : List<RatingInput>
+  }
+}
+RecommendationRequest "1" *-- "0..*" RatingInput : contains
+
+package "Persistent entities (SQLite tables) — setup_db.py" {
+  class Movie {
+    +movieId : int <<PK>>
+    +title : str
+    +genres : str
+  }
+  class Rating {
+    +userId : int <<PK>>
+    +movieId : int <<PK>>
+    +rating : float
+    +timestamp : int
+  }
+  class Tag {
+    +userId : int <<PK>>
+    +movieId : int <<PK>>
+    +tag : str <<PK>>
+    +timestamp : int
+  }
+}
+Movie "1" o-- "0..*" Rating : rated by
+Movie "1" o-- "0..*" Tag : tagged with
+
+package "Response DTO — recommender.py" {
+  class Recommendation {
+    +movieId : int
+    +title : str
+    +genres : str
+    +predictedRating : float
+  }
+}
+
+note bottom of Recommendation
+  Not a declared class — the dict shape built at
+  recommender.py:178-186 and returned by the API.
+end note
+@enduml
+
+@startuml component-modules
+title Backend module dependencies
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+[main.py] --> [db.py]
+[main.py] --> [routes/movies.py]
+[main.py] --> [routes/recommendations.py]
+[routes/movies.py] --> [db.py]
+[routes/movies.py] --> [models.py]
+[routes/recommendations.py] --> [models.py]
+[routes/recommendations.py] --> [recommender.py]
+[recommender.py] --> [db.py]
+[setup_db.py] --> [db.py]
+[db.py] ..> [setup_db.py] : lazy import (first run only)
+@enduml

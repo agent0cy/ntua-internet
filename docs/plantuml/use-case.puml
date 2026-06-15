@@ -1,0 +1,34 @@
+@startuml use-case
+' MovieLens Explorer — Use Case Diagram
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "User" as user
+
+rectangle "MovieLens Explorer" {
+  usecase "Search movies\nby keyword" as UC1
+  usecase "View average rating\nof a movie" as UC2
+  usecase "Add a new movie" as UC3
+  usecase "Rate a movie\n(session only)" as UC4
+  usecase "Get personalized\nrecommendations" as UC5
+}
+
+user --> UC1
+user --> UC2
+user --> UC3
+user --> UC4
+user --> UC5
+
+' Workflow prerequisites enforced by the UI (dependency arrows).
+UC2 ..> UC1 : <<precedes>>
+UC4 ..> UC1 : <<precedes>>
+UC5 ..> UC4 : <<precedes>>
+
+note bottom of UC1
+  search_movies()  -> routes/movies.py:22
+end note
+note bottom of UC5
+  recommend()  -> recommender.py:71
+end note
+@enduml
