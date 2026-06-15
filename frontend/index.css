@@ -1,47 +1,157 @@
-/* Simple styling so the page is easy to read. */
+/* MovieLens Explorer — colorful, lightweight styling (vanilla CSS). */
+
+:root {
+	--c1: #6366f1;   /* indigo */
+	--c2: #a855f7;   /* purple */
+	--c3: #ec4899;   /* pink   */
+	--text: #1f2937;
+	--muted: #6b7280;
+	--card: #ffffff;
+	--border: #e9e7f5;
+	--row-hover: #f5f3ff;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html {
+	min-height: 100%;
+	/* soft three-stop gradient so the page is not a flat colour */
+	background: linear-gradient(135deg, #eef2ff 0%, #fae8ff 50%, #ffe4e6 100%);
+}
 
 body {
-	font-family: Arial, sans-serif;
-	margin: 20px;
-	max-width: 800px;
+	font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+	color: var(--text);
+	line-height: 1.5;
+	max-width: 900px;
+	margin: 32px auto;
+	padding: 28px 32px 36px;
+	background: var(--card);
+	border-radius: 16px;
+	box-shadow: 0 12px 32px rgba(99, 102, 241, 0.18);
+}
+
+h1 {
+	margin: 0 0 4px;
+	font-size: 30px;
+	/* gradient text */
+	background: linear-gradient(135deg, var(--c1), var(--c2), var(--c3));
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
 }
 
 h2 {
-	margin-top: 30px;
-	border-bottom: 1px solid #ccc;
+	margin-top: 34px;
+	padding-bottom: 6px;
+	font-size: 20px;
+	/* gradient underline */
+	border-bottom: 3px solid;
+	border-image: linear-gradient(90deg, var(--c1), var(--c3)) 1;
 }
 
-input {
-	padding: 5px;
+p {
+	color: var(--muted);
+	margin: 6px 0 12px;
+}
+
+input,
+select,
+button {
+	font-size: 14px;
+}
+
+input,
+select {
+	padding: 8px 10px;
 	margin: 3px;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: #fff;
+}
+
+input:focus,
+select:focus {
+	outline: none;
+	border-color: var(--c1);
+	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 button {
-	padding: 5px 12px;
+	padding: 8px 16px;
+	margin: 3px;
+	border: none;
+	border-radius: 6px;
+	color: #fff;
+	font-weight: 600;
 	cursor: pointer;
+	background: linear-gradient(135deg, var(--c1), var(--c2));
+	transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+button:hover {
+	background: linear-gradient(135deg, var(--c2), var(--c3));
+	box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
+}
+
+button:active {
+	transform: translateY(1px);
 }
 
 table {
 	border-collapse: collapse;
 	width: 100%;
-	margin-top: 10px;
+	margin-top: 12px;
+	border-radius: 10px;
+	overflow: hidden;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+thead th {
+	background: linear-gradient(135deg, var(--c1), var(--c2));
+	color: #fff;
+	font-weight: 600;
+	text-transform: uppercase;
+	font-size: 12px;
+	letter-spacing: 0.04em;
 }
 
 th,
 td {
-	border: 1px solid #ccc;
-	padding: 6px;
+	padding: 10px 12px;
 	text-align: left;
+	border-bottom: 1px solid var(--border);
 }
 
-th {
-	background: #eee;
+tbody tr:nth-child(even) {
+	background: #faf9ff;
 }
 
-/* green for success messages, red for errors */
-.success {
-	color: green;
+tbody tr:hover {
+	background: var(--row-hover);
 }
+
+tbody tr:last-child td {
+	border-bottom: none;
+}
+
+/* status messages as soft coloured pills */
+.success,
 .error {
-	color: red;
+	display: inline-block;
+	padding: 4px 10px;
+	border-radius: 999px;
+	font-weight: 600;
+}
+
+.success {
+	color: #166534;
+	background: #dcfce7;
+}
+
+.error {
+	color: #991b1b;
+	background: #fee2e2;
 }

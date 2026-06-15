@@ -81,14 +81,38 @@ async function searchMovies() {
 }
 
 // Build the 0.5 - 5.0 rating dropdown for one movie (returns HTML text).
+// The dropdown only *selects* a value; nothing is saved until the user clicks
+// the Submit button beside it (see submitRating) — a deliberate, explicit action.
 function ratingDropdown(movieId) {
-	let html = "<select onchange='rateMovie(" + movieId + ", this.value)'>";
+	let html = "<select id='rating-" + movieId + "'>";
 	html += "<option value=''>Rate...</option>";
 	for (let r = 0.5; r <= 5; r += 0.5) {
 		html += "<option value='" + r + "'>" + r + "</option>";
 	}
 	html += "</select>";
+	html += " <button onclick='submitRating(" + movieId + ")'>Submit</button>";
 	return html;
+}
+
+// ---------------- Submit the chosen rating (deferred, on button click) ----------------
+// Reads the current dropdown value for this movie and saves it only now — not on
+// every dropdown change.
+function submitRating(movieId) {
+	const select = document.getElementById("rating-" + movieId);
+	const value = select.value;
+	const feedback = document.getElementById("search-feedback");
+
+	// nothing chosen yet: the placeholder "Rate..." option has an empty value
+	if (value === "") {
+		feedback.textContent = "Please choose a rating before submitting.";
+		feedback.className = "error";
+		return;
+	}
+
+	// save it (rateMovie stores it in myRatings and re-renders "Your ratings")
+	rateMovie(movieId, value);
+	feedback.textContent = "Saved your rating of " + value + " for " + searchedMovies[movieId].title + ".";
+	feedback.className = "success";
 }
 
 // ---------------- Average rating (GET /ratings/{id}) ----------------
