@@ -44,7 +44,9 @@ MIN_SUPPORT = 3   # min neighbours who must have rated a candidate movie
 # obscure film 5.0 produces an over-confident prediction (clamped to 5.0),
 # flooding the results with niche titles backed by one opinion. Requiring a few
 # neighbours to agree makes the top-N both more reliable and more recognisable.
-# It is a standard CF "support" safeguard, not part of the core formula.
+# When fewer than MIN_SUPPORT neighbours exist, all available neighbours must
+# support a candidate so the threshold does not make recommendations impossible.
+# This is a standard CF "support" safeguard, not part of the core formula.
 
 
 def _pearson(u_vals, v_vals):
@@ -149,10 +151,11 @@ def recommend(input_ratings):
                 denominator[movie_id] = denominator.get(movie_id, 0.0) + abs(sim)
                 support[movie_id] = support.get(movie_id, 0) + 1
 
+        required_support = min(MIN_SUPPORT, len(neighbour_ids))
         predictions = []
         for movie_id, num in numerator.items():
             den = denominator[movie_id]
-            if den == 0 or support[movie_id] < MIN_SUPPORT:
+            if den == 0 or support[movie_id] < required_support:
                 continue
             predictions.append((movie_id, mean_u + num / den))
 
