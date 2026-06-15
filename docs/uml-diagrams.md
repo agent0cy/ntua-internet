@@ -187,11 +187,11 @@ sequenceDiagram
         API->>REC: recommend([(movieId, rating), ...])
         REC->>DB: SELECT ratings WHERE movieId IN (input movies)
         DB-->>REC: overlapping users' ratings
-        REC->>REC: Pearson sim per user; keep positive, at least MIN_COMMON co-rated
+        REC->>REC: Pearson sim per user, keep positive with at least MIN_COMMON co-rated
         REC->>REC: sort, take TOP_K neighbours
         REC->>DB: SELECT ratings WHERE userId IN (neighbours)
         DB-->>REC: neighbour ratings, compute mean_v
-        REC->>REC: predict per unseen movie; filter MIN_SUPPORT; take TOP_N
+        REC->>REC: predict per unseen movie, filter MIN_SUPPORT, take TOP_N
         REC->>DB: SELECT title, genres WHERE movieId IN (top ids)
         DB-->>REC: movie info
         REC-->>API: [{movieId, title, genres, predictedRating}]
@@ -256,9 +256,9 @@ flowchart TD
     E --> K{any neighbours kept?}
     K -- No --> Z0
     K -- Yes --> L[sort by sim, take TOP_K]
-    L --> M[SELECT all neighbour ratings; compute mean_v]
+    L --> M[SELECT all neighbour ratings, compute mean_v]
     M --> N[per unseen movie: add sim x deviation to numerator, add abs sim to denominator, count support]
-    N --> O{support >= min of MIN_SUPPORT and neighbour count, and denom positive?}
+    N --> O{enough neighbour support and denom positive?}
     O -- No --> P[drop candidate movie]
     O -- Yes --> Q[predicted = mean_u + numerator / denominator, clamp 0.5 to 5.0]
     P --> R[sort candidates by predicted desc, take TOP_N]
@@ -270,7 +270,7 @@ flowchart TD
 **Flow in the code:** `B` = `recommender.py:79`; `C` = `:82`; `D` = step 1
 `:88-98`; `F` = `MIN_COMMON` check `:104`; `H` = `_pearson()` `:50-68`;
 `I` = `sim > 0` `:110`; `L` = top-K `:117-119`; `M` = `:124-136`;
-`N` = step 4 `:142-150`; `O` = `MIN_SUPPORT` / `den` check `:155`;
+`N` = step 4 `:142-150`; `O` = adaptive support check `required_support = min(MIN_SUPPORT, #neighbours)` `:153-157`;
 `Q` = predict + clamp `:157` and `:184`; `R` = top-N `:160-161`.
 
 ---
