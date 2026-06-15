@@ -258,7 +258,7 @@ flowchart TD
     K -- Yes --> L[sort by sim, take TOP_K]
     L --> M[SELECT all neighbour ratings; compute mean_v]
     M --> N[per unseen movie: add sim x deviation to numerator, add abs sim to denominator, count support]
-    N --> O{support at least MIN_SUPPORT and denom positive?}
+    N --> O{support >= min of MIN_SUPPORT and neighbour count, and denom positive?}
     O -- No --> P[drop candidate movie]
     O -- Yes --> Q[predicted = mean_u + numerator / denominator, clamp 0.5 to 5.0]
     P --> R[sort candidates by predicted desc, take TOP_N]

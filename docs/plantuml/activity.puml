@@ -76,7 +76,7 @@ repeat
   :denominator += abs(sim);
   :support += 1;
 repeat while (more candidate movies?) is (yes) not (no)
-:keep movies with support >= MIN_SUPPORT and denominator > 0;
+:keep movies with support >= min(MIN_SUPPORT, neighbour count) and denominator > 0;
 :predicted = mean_u + numerator / denominator;
 :clamp to [0.5, 5.0];
 :sort by predicted desc, take TOP_N;

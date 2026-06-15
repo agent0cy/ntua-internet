@@ -37,7 +37,7 @@
 2. `sim(u,v)` = Pearson on co-rated items; keep `sim>0` and `≥MIN_COMMON` co-rated (`:100-114`)
 3. Sort by sim, take top-`K` neighbours; fetch their ratings, compute each `mean_v` (`:116-136`)
 4. Per unseen movie: `numerator += sim·(rating−mean_v)`, `denominator += |sim|`, `support += 1` (`:138-150`)
-5. Keep `support≥MIN_SUPPORT`; `predicted = mean_u + num/den`; clamp `[0.5,5.0]`; sort desc, top-`N` (`:152-187`)
+5. Keep `support ≥ required_support` where `required_support = min(MIN_SUPPORT, #neighbours)`; `predicted = mean_u + num/den`; clamp `[0.5,5.0]`; sort desc, top-`N`
 
 **Two formulas:**
 - Pearson: `Σ(rᵤ−r̄ᵤ)(rᵥ−r̄ᵥ) / (√Σ(rᵤ−r̄ᵤ)² · √Σ(rᵥ−r̄ᵥ)²)` — range [−1,1]. Mean-centering cancels harsh-vs-generous users; measures *shape* of taste.
@@ -45,7 +45,7 @@
 
 **Two different means:** `r̄ᵤ` = mean of *your input* ratings; `r̄ᵥ` (in prediction) = neighbour's mean over *all* their DB ratings; Pearson's internal means = over co-rated only.
 
-**Tunables** (`:38-41`): `TOP_K=30` (neighbourhood) · `TOP_N=10` (recs) · `MIN_COMMON=2` (Pearson needs ≥2 points) · `MIN_SUPPORT=3` (≥3 neighbours must rate a candidate — not in spec, anti-noise safeguard).
+**Tunables** (`:38-41`): `TOP_K=30` (neighbourhood) · `TOP_N=10` (recs) · `MIN_COMMON=2` (Pearson needs ≥2 points) · `MIN_SUPPORT=3` anti-noise safeguard, not in spec. **Adaptive:** `required_support = min(MIN_SUPPORT, #neighbours)` — normally ≥3 neighbours must rate a candidate, but if fewer neighbours exist, all of them must (else a sparse neighbourhood → always-empty recs).
 
 **Why-questions:**
 - Why POST not GET? request carries a structured body (list of ratings).
