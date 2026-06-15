@@ -6,7 +6,7 @@ database whose tables mirror the CSV structure (movies / ratings / tags).
 
 Can be used two ways:
   - imported and called by the app on first startup (see db.init_database), or
-  - run directly to (re)build the database:  `python setup_db.py`
+  - run directly to (re)build the database on demand:  `python setup_db.py`
 """
 
 import csv
@@ -22,7 +22,6 @@ from db import BASE_DIR, DB_PATH
 ZIP_PATH = os.path.join(BASE_DIR, "ml-latest-small.zip")
 DATA_DIR = os.path.join(BASE_DIR, "ml-latest-small")
 
-
 def _load_csv(filename, columns):
     """Read `columns` out of a CSV in the extracted dataset dir as tuples."""
     path = os.path.join(DATA_DIR, filename)
@@ -30,7 +29,8 @@ def _load_csv(filename, columns):
         reader = csv.DictReader(f)
         return [tuple(row[col] for col in columns) for row in reader]
 
-
+# 4 stage pipeline data extraction, transformation and loading into sqlite
+# unzip -> read csvs with DictReader -> transform to typed tuples -> load into sqlite
 def initialize_db():
     # 1. Extract the dataset only if it hasn't been extracted yet.
     if not os.path.isdir(DATA_DIR):
@@ -40,9 +40,11 @@ def initialize_db():
     # 2. Read the three CSVs. Values are cast to their target types so the
     #    stored data is unambiguous (movieId/userId as INTEGER, rating as REAL)
     #    rather than relying on SQLite column affinity to coerce strings.
+    #    in cases a variable is not casted, it is stored as TEXT in the database; in those cases, that's what we want (store a string e.g. title, genres, tag).
     movies = [
         (int(mid), title, genres)
-        for mid, title, genres in _load_csv("movies.csv", ["movieId", "title", "genres"])
+        for mid, title, genres in _load_csv("movies.csv", 
+                                            ["movieId", "title", "genres"])
     ]
     ratings = [
         (int(uid), int(mid), float(rating), int(ts))
@@ -59,6 +61,7 @@ def initialize_db():
 
     # 3. Create the schema and bulk-insert. `with sqlite3.connect(...)` commits
     #    on success / rolls back on error automatically.
+    # Create all tables first
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute(
@@ -93,6 +96,7 @@ def initialize_db():
             """
         )
 
+        # then add all the data.
         # executemany does a single batched, C-level insert per table — far
         # faster than inserting rows one-by-one for ~100k ratings.
         cursor.executemany(
@@ -106,6 +110,9 @@ def initialize_db():
             "INSERT INTO tags (userId, movieId, tag, timestamp) VALUES (?, ?, ?, ?)",
             tags,
         )
+
+        # commit the transaction to save the changes to the database
+        # do not close the connection here; the context manager will handle it automatically when exiting the block
         conn.commit()
 
     print(

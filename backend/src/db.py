@@ -15,10 +15,12 @@ import os
 import sqlite3
 from contextlib import contextmanager
 
-# Absolute directory of the backend package. Everything is anchored to this so
-# that `python main.py`, `uvicorn main:app` from backend/, or `uvicorn
-# backend.main:app` from the repo root all find the same files.
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# The source code now lives in backend/src/, but the dataset zip and the
+# generated SQLite file live one level up in backend/ (data kept separate from
+# code). So we anchor data paths to the *parent* of this file's directory, which
+# keeps the DB and dataset where they are regardless of where the server runs.
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))   # .../backend/src
+BASE_DIR = os.path.dirname(SRC_DIR)                     # .../backend  (data + db live here)
 DB_PATH = os.path.join(BASE_DIR, "movielens.db")
 
 

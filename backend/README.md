@@ -26,22 +26,23 @@ The database (`movielens.db`) is built automatically the first time the server
 starts. You can also build it explicitly:
 
 ```bash
-python setup_db.py
+python src/setup_db.py
 ```
 
 This extracts `ml-latest-small.zip` and loads the `movies`, `ratings`, and
-`tags` tables.
+`tags` tables. The dataset and the generated `movielens.db` are kept in
+`backend/` (next to this README), separate from the source code in `src/`.
 
 ## Run the server
 
 ```bash
-python main.py
+python src/main.py
 ```
 
 The API listens on **port 3000** with base path **`/movielens/api`**.
 Interactive docs are available at <http://localhost:3000/docs>.
 
-(Equivalent: `uvicorn main:app --host 0.0.0.0 --port 3000`.)
+(Equivalent: `uvicorn main:app --app-dir src --host 0.0.0.0 --port 3000`.)
 
 ## API
 
@@ -69,14 +70,16 @@ User-based collaborative filtering (`recommender.py`):
 
 ```
 backend/
-├── main.py              # FastAPI app, CORS, router wiring, uvicorn entrypoint
-├── db.py                # paths + get_db() connection helper + first-run init
-├── setup_db.py          # create & populate the SQLite DB from the CSVs
-├── models.py            # Pydantic request models
-├── recommender.py       # collaborative-filtering recommendation algorithm
-├── routes/
-│   ├── movies.py        # /movies, /ratings/{movieId}
-│   └── recommendations.py  # /recommendations
+├── src/                     # all Python source code
+│   ├── main.py              # FastAPI app, CORS, router wiring, uvicorn entrypoint
+│   ├── db.py                # paths + get_db() connection helper + first-run init
+│   ├── setup_db.py          # create & populate the SQLite DB from the CSVs
+│   ├── models.py            # Pydantic request models
+│   ├── recommender.py       # collaborative-filtering recommendation algorithm
+│   └── routes/
+│       ├── movies.py        # /movies, /ratings/{movieId}
+│       └── recommendations.py  # /recommendations
 ├── requirements.txt
-└── ml-latest-small.zip  # bundled dataset
+├── README.md
+└── ml-latest-small.zip      # bundled dataset (DB + extracted CSVs generated here)
 ```
