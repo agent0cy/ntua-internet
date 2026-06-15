@@ -33,6 +33,18 @@ This extracts `ml-latest-small.zip` and loads the `movies`, `ratings`, and
 `tags` tables. The dataset and the generated `movielens.db` are kept in
 `backend/` (next to this README), separate from the source code in `src/`.
 
+## Reset the database
+
+To restore a clean dataset (e.g. after adding test movies), delete the DB and
+rebuild it from the bundled data:
+
+```bash
+python src/reset_db.py
+```
+
+This deletes `movielens.db` and rebuilds it via the same `initialize_db()` used
+on first startup. (Equivalent to `rm movielens.db && python src/setup_db.py`.)
+
 ## Run the server
 
 ```bash
