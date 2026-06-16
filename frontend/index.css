@@ -1,5 +1,16 @@
 /* MovieLens Explorer — colorful, lightweight styling (vanilla CSS). */
 
+/*
+ * THEORY · L1 · CSS = Cascading Style Sheets, a style-sheet LANGUAGE.
+ *   Its job is to control the PRESENTATION (colours, fonts, layout) of a
+ *   document written in a markup language. This realises the course's
+ *   separation-of-concerns idea: HTML holds structure, CSS holds appearance,
+ *   JavaScript holds behaviour. A CSS rule is `selector { property: value }`.
+ *
+ * THEORY · L1 · custom properties (CSS variables) declared on :root (the
+ *   document root). Defining the palette once and referencing it with var()
+ *   throughout is the "cascade"/reuse idea in practice.
+ */
 :root {
 	--c1: #6366f1;   /* indigo */
 	--c2: #a855f7;   /* purple */
@@ -72,6 +83,10 @@ select {
 	background: #fff;
 }
 
+/* THEORY · L3/L1 · pseudo-classes (:focus, :hover, :active) style an element
+ * according to its interaction STATE. They are the declarative, CSS-side
+ * counterpart to JavaScript UI events (onfocus / onmouseover / onmousedown):
+ * the visual reaction to focus/hover/press needs no JS at all. */
 input:focus,
 select:focus {
 	outline: none;

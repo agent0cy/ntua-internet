@@ -28,6 +28,18 @@ requires being able to explain the code):
   * Only neighbours with a positive correlation contribute (negative-correlation
     users disagree with u and would add noise).
   * Predicted ratings are clamped to the MovieLens [0.5, 5.0] scale for display.
+
+────────────────────────────────────────────────────────────────────────────
+THEORY · This module is the assignment's DOMAIN logic (the recommendation
+algorithm), not a course HTTP/JS topic. Its course-relevant touch points are:
+  o it runs only SELECT queries — read-only "stateless compute" feeding the
+    POST /recommendations endpoint (REST stateless principle),
+  o every query uses `?` PLACEHOLDERS built dynamically from the input list,
+    so user-supplied movie ids are bound, never concatenated (SQL injection
+    safety, L4), and
+  o it opens the DB through the same `with get_db()` context manager, so the
+    connection is always closed (L4 resource management).
+────────────────────────────────────────────────────────────────────────────
 """
 
 from math import sqrt
@@ -88,6 +100,9 @@ def recommend(input_ratings):
         cursor = conn.cursor()
 
         # --- Step 1: users who overlap with u on at least one input movie -----
+        # THEORY · L4 · dynamic parameterized query: we build one `?` per input
+        # movie id ("?,?,?") and bind the ids as parameters — a safe SQL `IN`
+        # list with no string interpolation of user data.
         placeholders = ",".join("?" for _ in movie_ids)
         cursor.execute(
             f"SELECT userId, movieId, rating FROM ratings "

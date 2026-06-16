@@ -1,14 +1,35 @@
 <!DOCTYPE html>
+<!--
+  THEORY · L1/L2 · HTML = HyperText Markup Language. It is a MARKUP language:
+  embedded "tags" describe the STRUCTURE and meaning of the page (not the
+  network protocol — that is HTTP). <!DOCTYPE html> declares this an HTML5
+  document. The browser parses this markup into the DOM tree that JavaScript
+  then manipulates.
+-->
 <html>
 	<head>
 		<meta charset="UTF-8" />
 		<title>MovieLens Explorer</title>
+		<!--
+		  THEORY · L1/L4 · Separation of concerns + multiple HTTP transactions.
+		  HTML (structure), CSS (presentation), JS (behaviour) are kept in three
+		  files. This <link> tells the browser to make a SEPARATE HTTP GET request
+		  for index.css: one web page typically triggers several HTTP transactions
+		  (the HTML, then each linked stylesheet / script / image).
+		-->
 		<link rel="stylesheet" href="index.css" />
 	</head>
 	<body>
 		<h1>MovieLens Explorer</h1>
 
 		<!-- 1. ADD A MOVIE -->
+		<!--
+		  THEORY · L3 · Inline event handlers. onclick="addMovie()" is an HTML-
+		  attribute event handler: the browser invokes the JS function when the
+		  click event fires. This is the "manage events by creating onevent
+		  handlers in HTML elements" approach from the JavaScript lecture (the
+		  alternative being addEventListener in JS).
+		-->
 		<h2>Add a movie</h2>
 		<p>Type a title and genres (separate genres with "|"), then click Add.</p>
 		Title: <input id="add-title" />
@@ -17,6 +38,12 @@
 		<p id="add-feedback"></p>
 
 		<!-- 2. SEARCH MOVIES -->
+		<!--
+		  THEORY · L3 · Elements carry id attributes (search-input, search-results,
+		  ...). JS reaches them via document.getElementById and reads inputs /
+		  rewrites table bodies — the live DOM is the bridge between markup and
+		  script.
+		-->
 		<h2>Search movies</h2>
 		<p>Type a keyword and click Search.</p>
 		Keyword: <input id="search-input" />
@@ -85,6 +112,14 @@
 			<tbody id="rec-results"></tbody>
 		</table>
 
+		<!--
+		  THEORY · L3/L4 · External script, loaded LAST. When the HTML parser meets
+		  a <script>, it runs it before continuing. Placing the script at the end
+		  of <body> guarantees every element above already exists in the DOM, so
+		  getElementById calls inside index.js never return null. The src attribute
+		  pulls the JS from a separate file (its own HTTP request), keeping markup
+		  and behaviour separate.
+		-->
 		<script src="index.js"></script>
 	</body>
 </html>

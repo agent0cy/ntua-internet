@@ -6,6 +6,11 @@ you can restore clean data on demand (e.g. before a demo, or after adding test
 movies). The app's normal startup is unaffected — this is a manual tool.
 
 Run from backend/:  python src/reset_db.py
+
+THEORY · L4 · idempotent rebuild: setup_db.py uses plain INSERTs and assumes a
+fresh database, so re-running it against an existing DB would raise an
+IntegrityError on the duplicate primary keys. Deleting the file first guarantees
+a clean slate — the simplest "DROP everything and recreate" workflow.
 """
 
 import os
