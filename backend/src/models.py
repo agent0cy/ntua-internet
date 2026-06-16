@@ -29,3 +29,11 @@ class RecommendationRequest(BaseModel):
     """Body for POST /recommendations: the ratings the user gave this session."""
 
     ratings: List[RatingInput]
+
+# --- EXAM Q ---
+# ---------- tag search request model starts ----------
+class TagMoviesRequest(BaseModel):
+    """Body for POST /tags/movies: the tag search text supplied by the user."""
+
+    search: str
+# ---------- tag search request model finishes ----------

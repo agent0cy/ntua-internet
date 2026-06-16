@@ -35,6 +35,25 @@
 			<tbody id="search-results"></tbody>
 		</table>
 
+		<!-- ---------- tag search UI starts ---------- -->
+		<h2>Search by tag</h2>
+		<p>Type a tag keyword and click Search tags.</p>
+		Tag: <input id="tag-search-input" />
+		<button onclick="searchByTag()">Search tags</button>
+		<p id="tag-search-feedback"></p>
+		<table>
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Title</th>
+					<th>Genres</th>
+					<th>Matching tag</th>
+				</tr>
+			</thead>
+			<tbody id="tag-search-results"></tbody>
+		</table>
+		<!-- ---------- tag search UI finishes ---------- -->
+
 		<!-- 3. YOUR RATINGS -->
 		<h2>Your ratings (<span id="ratings-count">0</span>)</h2>
 		<p>These are kept only in your browser and are used for recommendations.</p>

@@ -145,6 +145,42 @@ function rateMovie(movieId, value) {
 	showMyRatings();
 }
 
+// ---------------- EXAM Q -----------------
+// ---------- tag-based movie search starts ----------
+async function searchByTag() {
+	const keyword = document.getElementById("tag-search-input").value;
+	const feedback = document.getElementById("tag-search-feedback");
+	const tbody = document.getElementById("tag-search-results");
+
+	try {
+		const data = await callApi("/tags/movies", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ search: keyword }),
+		});
+
+		let html = "";
+		for (const movie of data.movies) {
+			html += "<tr>";
+			html += "<td>" + movie.movieId + "</td>";
+			html += "<td>" + movie.title + "</td>";
+			html += "<td>" + movie.genres + "</td>";
+			html += "<td>" + movie.matchingTag + "</td>";
+			html += "</tr>";
+		}
+		tbody.innerHTML = html;
+
+		feedback.textContent = "Found " + data.movies.length + " movie(s) with matching tags.";
+		feedback.className = "success";
+	} catch (error) {
+		tbody.innerHTML = "";
+		feedback.textContent = "Error: could not reach the server.";
+		feedback.className = "error";
+	}
+}
+// ---------- tag-based movie search finishes ----------
+// END OF EXAM Q
+
 // ---------------- 3. Show the "Your ratings" table ----------------
 function showMyRatings() {
 	const tbody = document.getElementById("my-ratings");

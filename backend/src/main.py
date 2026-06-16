@@ -12,6 +12,7 @@ Full endpoint paths (base URL http://{domain}:3000/movielens/api):
   GET  /movielens/api/ratings/{movieId}
   POST /movielens/api/movies
   POST /movielens/api/recommendations
+  POST /movielens/api/tags/movies
 """
 
 from contextlib import asynccontextmanager
@@ -21,6 +22,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from db import init_database
 from routes import movies, recommendations
+# ---------- tag search route import starts ----------
+from routes import tags
+# ---------- tag search route import finishes ----------
 
 # The assignment's base URL is http://{domain}:3000/movielens/api, so every
 # route is mounted under this prefix.
@@ -50,6 +54,10 @@ app.add_middleware(
 # Mount the routers under the API base path.
 app.include_router(movies.router, prefix=API_PREFIX)
 app.include_router(recommendations.router, prefix=API_PREFIX)
+# --- EXAM Q ---
+# ---------- tag search route registration starts ----------
+app.include_router(tags.router, prefix=API_PREFIX)
+# ---------- tag search route registration finishes ----------
 
 
 if __name__ == "__main__":
