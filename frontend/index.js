@@ -43,9 +43,28 @@ let searchedMovies = {};
 //   * response.json() itself returns a Promise (parsing the body is async), so
 //     we await it too. An async function always returns a Promise, so callers
 //     of callApi() must await it as well.
+//   * fetch only REJECTS on a network failure, NOT on an HTTP 4xx/5xx status, so
+//     we check response.ok and throw ourselves — otherwise a server error would
+//     slip through as "success" (e.g. showing "Added! id: undefined").
 async function callApi(path, options) {
 	const response = await fetch(API_BASE + path, options);
+	if (!response.ok) {
+		throw new Error("Request failed with status " + response.status);
+	}
 	return response.json();
+}
+
+// Escape user-controlled text (movie titles, genres, tags) before inserting it
+// into the page. Titles are arbitrary — a movie added as "<img src=x
+// onerror=...>" would otherwise run as HTML/JS (stored XSS) for anyone who later
+// sees it. Escaping the five HTML-significant characters neutralises it.
+function escapeHtml(text) {
+	return String(text)
+		.replaceAll("&", "&amp;")
+		.replaceAll("<", "&lt;")
+		.replaceAll(">", "&gt;")
+		.replaceAll('"', "&quot;")
+		.replaceAll("'", "&#39;");
 }
 
 // ---------------- 1. Add a movie ----------------
@@ -116,8 +135,8 @@ async function searchMovies() {
 			searchedMovies[movie.movieId] = movie; // remember it for rating later
 			html += "<tr>";
 			html += "<td>" + movie.movieId + "</td>";
-			html += "<td>" + movie.title + "</td>";
-			html += "<td>" + movie.genres + "</td>";
+			html += "<td>" + escapeHtml(movie.title) + "</td>";
+			html += "<td>" + escapeHtml(movie.genres) + "</td>";
 			html += "<td><button onclick='showAverage(" + movie.movieId + ", this)'>Show</button></td>";
 			html += "<td>" + ratingDropdown(movie.movieId) + "</td>";
 			html += "</tr>";
@@ -239,9 +258,9 @@ async function searchByTag() {
 		for (const movie of data.movies) {
 			html += "<tr>";
 			html += "<td>" + movie.movieId + "</td>";
-			html += "<td>" + movie.title + "</td>";
-			html += "<td>" + movie.genres + "</td>";
-			html += "<td>" + movie.matchingTag + "</td>";
+			html += "<td>" + escapeHtml(movie.title) + "</td>";
+			html += "<td>" + escapeHtml(movie.genres) + "</td>";
+			html += "<td>" + escapeHtml(movie.matchingTag) + "</td>";
 			html += "</tr>";
 		}
 		tbody.innerHTML = html;
@@ -268,7 +287,7 @@ function showMyRatings() {
 	for (const id of ids) {
 		const r = myRatings[id];
 		html += "<tr>";
-		html += "<td>" + r.title + "</td>";
+		html += "<td>" + escapeHtml(r.title) + "</td>";
 		html += "<td>" + r.rating + "</td>";
 		html += "<td><button onclick='removeRating(" + id + ")'>Remove</button></td>";
 		html += "</tr>";
@@ -320,8 +339,8 @@ async function getRecommendations() {
 		for (const rec of data.recommendations) {
 			html += "<tr>";
 			html += "<td>" + rec.movieId + "</td>";
-			html += "<td>" + rec.title + "</td>";
-			html += "<td>" + rec.genres + "</td>";
+			html += "<td>" + escapeHtml(rec.title) + "</td>";
+			html += "<td>" + escapeHtml(rec.genres) + "</td>";
 			html += "<td>" + rec.predictedRating + "</td>";
 			html += "</tr>";
 		}

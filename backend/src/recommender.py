@@ -82,6 +82,26 @@ def _pearson(u_vals, v_vals):
     return numerator / denom
 
 
+# Widest possible gap between two ratings on the MovieLens 0.5–5.0 scale.
+RATING_SPAN = 4.5
+
+
+def _similarity(u_vals, v_vals):
+    """
+    Similarity between two aligned rating vectors over their co-rated items.
+
+      * 2+ co-rated items -> Pearson correlation (the metric the spec asks for).
+      * exactly 1 co-rated item -> Pearson is undefined (a single point has zero
+        variance), so fall back to rating *closeness* on that one movie: 1.0 when
+        both users gave it the same score, sliding to 0.0 at the maximum possible
+        gap. This is what lets a user who rated only ONE movie still get
+        recommendations instead of an empty list.
+    """
+    if len(u_vals) >= 2:
+        return _pearson(u_vals, v_vals)
+    return 1.0 - abs(u_vals[0] - v_vals[0]) / RATING_SPAN
+
+
 def recommend(input_ratings):
     """
     `input_ratings`: list of (movieId, rating) supplied by the web-app user.
@@ -114,13 +134,20 @@ def recommend(input_ratings):
         for row in cursor.fetchall():
             corated.setdefault(row["userId"], {})[row["movieId"]] = row["rating"]
 
-        # --- Step 2: Pearson similarity on co-rated items ---------------------
+        # --- Step 2: similarity on co-rated items -----------------------------
+        # When u supplied only ONE rating, every neighbour shares at most that
+        # one movie, so Pearson (needs >=2 points) is undefined for all of them.
+        # In that case accept a single common movie and let _similarity fall back
+        # to rating closeness, so the user still gets recommendations.
+        solo = len(input_dict) == 1
+        min_common = 1 if solo else MIN_COMMON
+
         similarities = {}
         for v, v_ratings in corated.items():
             common = [m for m in v_ratings if m in input_dict]
-            if len(common) < MIN_COMMON:
+            if len(common) < min_common:
                 continue
-            sim = _pearson(
+            sim = _similarity(
                 [input_dict[m] for m in common],
                 [v_ratings[m] for m in common],
             )
@@ -203,3 +230,14 @@ def recommend(input_ratings):
             }
         )
     return results
+
+
+if __name__ == "__main__":
+    # ponytail: self-check for the similarity logic (no DB, no framework).
+    assert abs(_pearson([1, 2, 3], [1, 2, 3]) - 1.0) < 1e-9   # perfect match -> +1
+    assert abs(_pearson([1, 2, 3], [3, 2, 1]) + 1.0) < 1e-9   # perfect inverse -> -1
+    assert _pearson([2, 2], [5, 1]) == 0.0                    # zero variance -> 0
+    assert _similarity([4.0], [4.0]) == 1.0                   # identical single rating
+    assert _similarity([0.5], [5.0]) == 0.0                   # widest single-rating gap
+    assert 0.0 < _similarity([5.0], [4.0]) < 1.0              # close but not equal
+    print("recommender self-check OK")
