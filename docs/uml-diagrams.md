@@ -1,5 +1,10 @@
 # MovieLens Explorer — UML Diagrams
 
+> Historical diagrams from the earlier implementation. Line numbers, rating
+> triggers and recommendation filters are outdated. For the current code, use
+> [the source map and exam guide](../notes/exam-prep/00-index.md) and
+> [requirements check](requirements-check.md).
+
 UML models of the whole application, each paired with a **"flow in the code"** map
 (file → function → line) so every arrow can be traced to real code.
 

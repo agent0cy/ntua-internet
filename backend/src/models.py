@@ -1,63 +1,46 @@
-"""
-Pydantic request models.
+"""Request schemas: FastAPI parses JSON into these Pydantic BaseModel objects.
 
-Typed models give us automatic request validation and self-documenting schemas
-in the interactive docs (/docs). They also fix the original bug where the
-recommendation body was typed as a bare `List[dict]` with no field validation.
-
-────────────────────────────────────────────────────────────────────────────
-THEORY · L4 Server-side/REST · Request Body & Data Validation (Pydantic)
-  The lecture's "Request Body and Data Validation" slide: to declare a request
-  body in FastAPI you use a Pydantic model. For every incoming request FastAPI
-  then automatically:
-    o reads the body of the request as JSON,
-    o makes the necessary data-type conversions (e.g. "5" → 5),
-    o validates the data (wrong/missing fields → 422 error, no code of ours),
-    o hands the parsed object to our function parameter, and
-    o generates a JSON Schema for the model (part of the OpenAPI/Swagger docs).
-  Each class below is one such schema. The `field: type` lines are standard
-  Python type annotations — the same mechanism FastAPI reuses for path and
-  query parameters.
-────────────────────────────────────────────────────────────────────────────
+Type hints alone do not validate ordinary Python functions. Pydantic performs
+runtime checks here; invalid request data produces HTTP 422 before SQL runs.
+These are validation models, not database tables or ORM models.
 """
 
-from typing import List
-
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class MovieAdd(BaseModel):
-    """Body for POST /movies."""
+    """Body for POST /movies; strip whitespace before checking required text."""
 
-    # THEORY · L4 · JSON ↔ typed object: these two declared string fields are
-    # exactly the name/value pairs the JSON request body must contain. Anything
-    # else is rejected before our endpoint code ever runs.
-    title: str
-    genres: str
+    model_config = ConfigDict(str_strip_whitespace=True)
+    title: str = Field(min_length=1)
+    genres: str = Field(min_length=1)
 
 
 class RatingInput(BaseModel):
-    """A single {movieId, rating} pair inside a recommendation request."""
+    """One MovieLens rating: positive ID and a half-star value from 0.5 to 5."""
 
-    # THEORY · L4 · nested models: a Pydantic model may be used as the type of
-    # another model's field (see RecommendationRequest below), so JSON objects
-    # nested inside arrays are validated recursively.
-    movieId: int
-    rating: float
+    movieId: int = Field(gt=0, strict=True)
+    rating: float = Field(ge=0.5, le=5, multiple_of=0.5, allow_inf_nan=False, strict=True)
 
 
 class RecommendationRequest(BaseModel):
-    """Body for POST /recommendations: the ratings the user gave this session."""
+    """Nested models validate every item; an empty list legitimately gives []."""
 
-    # THEORY · L4 · JSON arrays of objects: `List[RatingInput]` validates a JSON
-    # array where each element must match the RatingInput schema. This is the
-    # typed replacement for the original, unvalidated `List[dict]`.
-    ratings: List[RatingInput]
+    ratings: list[RatingInput]
 
-# --- EXAM Q ---
-# ---------- tag search request model starts ----------
+    @field_validator("ratings")
+    @classmethod
+    def unique_movies(cls, ratings):
+        # Silently keeping the last duplicate would hide ambiguous input.
+        if len({r.movieId for r in ratings}) != len(ratings):
+            raise ValueError("Each movieId must appear only once")
+        return ratings
+
+
+# ---------- June 2026 extension starts ----------
 class TagMoviesRequest(BaseModel):
-    """Body for POST /tags/movies: the tag search text supplied by the user."""
+    """Body for POST /tags/movies; blank searches are not useful keywords."""
 
-    search: str
-# ---------- tag search request model finishes ----------
+    model_config = ConfigDict(str_strip_whitespace=True)
+    search: str = Field(min_length=1)
+# ---------- June 2026 extension finishes ----------

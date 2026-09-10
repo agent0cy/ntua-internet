@@ -3,7 +3,7 @@
 Web-dev project for the Internet Applications course in ECE NTUA.
 
 A web app over the MovieLens "latest-small" dataset: search movies, add movies,
-rate them (in-browser), view average ratings, and get personalized
+rate them in page memory, view average ratings, and get personalized
 recommendations. FastAPI + SQLite backend, vanilla HTML/CSS/JS frontend.
 
 ## Quick start
@@ -42,4 +42,19 @@ automatically on the backend's first start.
 
 See [`backend/README.md`](backend/README.md) for API details and how to build or
 reset the database, and [`docs/uml-diagrams.md`](docs/uml-diagrams.md) for the
-architecture diagrams.
+historical architecture diagrams; use the new exam guide below for current flows.
+
+## Exam preparation
+
+The Spring 2026 requirements are checked in
+[docs/requirements-check.md](docs/requirements-check.md). The June tag-search
+extension is retained and clearly marked in code and UI.
+
+- [Greek oral-exam PDF](output/pdf/MovieLens_Oral_Exam_Guide_GR.pdf): 168 questions
+  with answers, 16 DevTools drills, worked recommendations and three mock exams.
+- [Editable study notes and source map](notes/exam-prep/00-index.md).
+- [Validation commands and API details](backend/README.md).
+
+Use the new guide for the current implementation. Older study aids, UML diagrams
+and `20012.zip` describe earlier versions and have been preserved as historical
+material. The archive has not been refreshed or submitted.

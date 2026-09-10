@@ -1,109 +1,150 @@
-# MovieLens Backend
+# MovieLens backend
 
-FastAPI + SQLite backend for the MovieLens "latest-small" web application.
+FastAPI + SQLite for the Spring 2026 assignment, with the June 2026 tag-search
+extension retained and marked by ten-dash start/end comments.
 
-## Requirements
+## Setup and run
 
-- Python 3.10+
-- The bundled dataset `ml-latest-small.zip` (already in this directory)
-
-## Setup
+Python 3.10+ is required. From the repository root:
 
 ```bash
 cd backend
-
-# (recommended) create and activate a virtual environment
 python3 -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
-
-# install dependencies
+source venv/bin/activate
 pip install -r requirements.txt
-```
-
-## Create the database
-
-The database (`movielens.db`) is built automatically the first time the server
-starts. You can also build it explicitly:
-
-```bash
-python src/setup_db.py
-```
-
-This extracts `ml-latest-small.zip` and loads the `movies`, `ratings`, and
-`tags` tables. The dataset and the generated `movielens.db` are kept in
-`backend/` (next to this README), separate from the source code in `src/`.
-
-## Reset the database
-
-To restore a clean dataset (e.g. after adding test movies), delete the DB and
-rebuild it from the bundled data:
-
-```bash
-python src/reset_db.py
-```
-
-This deletes `movielens.db` and rebuilds it via the same `initialize_db()` used
-on first startup. (Equivalent to `rm movielens.db && python src/setup_db.py`.)
-
-## Run the server
-
-```bash
 python src/main.py
 ```
 
-The API listens on **port 3000** with base path **`/movielens/api`**.
-Interactive docs are available at <http://localhost:3000/docs>.
+The tested direct dependency versions are pinned in `requirements.txt`.
+SQLite, CSV import and the recommender use the Python standard library.
 
-(Equivalent: `uvicorn main:app --app-dir src --host 0.0.0.0 --port 3000`.)
+The API listens on port **3000**, under **`/movielens/api`**.
+Open <http://localhost:3000/docs> for Swagger UI or
+<http://localhost:3000/openapi.json> for the OpenAPI description.
+The frontend runs separately: from the repository root, `./start.sh both`
+after setup, then open <http://localhost:8080>.
 
-## API
+## Database creation and reset
+
+The bundled `ml-latest-small.zip` supplies the dataset; no download is needed.
+On first startup, `initialize_db()` creates `movies`, `ratings` and `tags`
+with the corresponding CSV columns and imports all data rows: **9,742 movies,
+100,836 ratings, 3,683 tags**. The June sheet's 3,684 figure differs from the
+bundled CSV's data-row count. Existing databases may contain added movies.
+
+From `backend/`, `python src/setup_db.py` also initializes the database.
+If the database already exists, it is preserved. Imports build a temporary
+SQLite file, commit successfully and then replace the destination, so a failed
+import cannot destroy a working database. Extracted CSVs and `movielens.db`
+live in `backend/`; source code lives in `backend/src/`.
+
+To **discard added movies** and restore the bundled dataset, stop the backend
+first and run `python src/reset_db.py`. This is an explicit manual reset;
+normal startup never resets existing data.
+
+## API contract
 
 Base URL: `http://localhost:3000/movielens/api`
 
-| Method | Path                     | Description                                   |
-|--------|--------------------------|-----------------------------------------------|
-| GET    | `/movies?search={kw}`    | Search movies by title (case-insensitive)     |
-| GET    | `/ratings/{movieId}`     | All ratings for a movie                       |
-| POST   | `/movies`                | Add a movie `{title, genres}` → `{movieId}`   |
-| POST   | `/recommendations`       | Recommendations from `{ratings:[{movieId,rating}]}` |
-<!-- ---------- tag search endpoint table row starts ---------- -->
-| POST   | `/tags/movies`           | Movies with at least one matching tag from `{search}` |
-<!-- ---------- tag search endpoint table row finishes ---------- -->
+| Method | Path | Input | Success response |
+|---|---|---|---|
+| GET | `/movies?search=...` | Query keyword; omitted/empty matches all | 200 `{status:"success", movies:[...]}` |
+| GET | `/ratings/{movieId}` | Positive integer path ID | 200 `{status:"success", ratings:[...]}` |
+| POST | `/movies` | `{title, genres}` | 201 `{status:"success", movieId:...}` |
+| POST | `/recommendations` | `{ratings:[{movieId,rating}]}` | 200 `{status:"success", recommendations:[...]}` |
 
-### Recommendation algorithm
+JSON bodies use double-quoted keys/strings. Example:
 
-User-based collaborative filtering (`recommender.py`):
-
-1. Find DB users who co-rated the movies the user supplied.
-2. `sim(u, v)` = Pearson correlation over co-rated items.
-3. Keep the top-`K` most similar users (`K = 30`).
-4. Predict each unseen movie's rating with the mean-centered weighted average
-   `r̂(u,i) = r̄_u + Σ sim(u,v)·(r_{v,i} − r̄_v) / Σ |sim(u,v)|`.
-5. Return the top-`N` movies (`N = 10`).
-
-<!-- ---------- tag search docs starts ---------- -->
-### Tag-based movie search
-
-`POST /tags/movies` accepts `{ "search": "keyword" }` and returns movies
-that have at least one matching user-provided tag. Matching is
-case-insensitive. Keywords shorter than 5 characters must equal the whole tag;
-keywords with at least 5 characters match the first 5 characters of the tag.
-<!-- ---------- tag search docs finishes ---------- -->
-
-## Project layout
-
+```json
+{"ratings":[{"movieId":1,"rating":5},{"movieId":32,"rating":2}]}
 ```
-backend/
-├── src/                     # all Python source code
-│   ├── main.py              # FastAPI app, CORS, router wiring, uvicorn entrypoint
-│   ├── db.py                # paths + get_db() connection helper + first-run init
-│   ├── setup_db.py          # create & populate the SQLite DB from the CSVs
-│   ├── models.py            # Pydantic request models
-│   ├── recommender.py       # collaborative-filtering recommendation algorithm
-│   └── routes/
-│       ├── movies.py        # /movies, /ratings/{movieId}
-│       └── recommendations.py  # /recommendations
-├── requirements.txt
-├── README.md
-└── ml-latest-small.zip      # bundled dataset (DB + extracted CSVs generated here)
+
+Titles are searched by literal, Unicode case-insensitive substring. `%` and `_`
+are ordinary characters, not wildcard operators. Results include all matches.
+Movie IDs are allocated by SQLite's `INTEGER PRIMARY KEY`; duplicate titles
+are allowed. Title/genres must contain non-whitespace text.
+
+Ratings must be finite numeric values from 0.5 to 5 in half-star increments.
+IDs must be positive JSON integers; numeric strings and booleans are rejected.
+Duplicate input movie IDs are rejected. Invalid requests return **422** with
+`detail` entries containing `loc`, `msg`, and `type`. Additional unknown model
+fields are ignored under Pydantic's default policy.
+
+An ID with no dataset ratings yields an empty list. Recommendation input IDs
+are validated structurally, but not checked for database existence: unknown
+IDs provide no overlap and still contribute to the input user's mean.
+Submitted ratings are **never stored**. Browser ratings disappear on refresh.
+
+<!-- ---------- June 2026 extension starts ---------- -->
+### Tag-search extension
+
+`POST /tags/movies` accepts `{"search":"funny"}` and returns
+`{status:"success",movies:[{movieId,title,genres,matchingTag},...]}`.
+
+After stripping surrounding whitespace, a keyword under five characters must
+match the entire tag. At least five characters compares the first five
+characters on both sides. Comparisons use Unicode case folding. Blank input
+returns 422. A movie with several matching tags appears once; `matchingTag`
+is one of those tags, selected with SQL `MIN`. This operation is a **POST**
+because the June assignment explicitly requires it, even though it only reads.
+<!-- ---------- June 2026 extension finishes ---------- -->
+
+## Recommendation algorithm
+
+`recommender.py` follows the formula in the Spring assignment, page 3:
+
+1. Find users with overlapping rated movies.
+2. Compute Pearson over co-rated vectors, with means restricted to those vectors.
+3. Retain the top **K=30** nonzero usable correlations, including negative ones.
+4. For each unseen candidate, calculate
+   `mean_u + sum(sim * (rating_vi - mean_v)) / sum(abs(sim))`.
+5. Rank raw predictions, break ties by movie ID, and return at most **N=10**,
+   rounded to two decimals.
+
+The prediction uses the input user's overall mean and each neighbour's overall
+dataset mean. Both sums include only neighbours who rated that candidate;
+missing ratings are not zero. Fewer than two shared movies, zero variance or
+no usable weights may produce an empty result. Zero correlation contributes
+no weight and is omitted. Neighbour ties use user ID.
+
+There is no extra support filter or score clamping. The formula can predict
+outside the input scale 0.5-5; the frontend explains this. Empty, single-rating
+and constant-score requests may legitimately return `[]`. The UI recommends
+at least two familiar movies with different scores.
+
+## Implementation map and limits
+
+- `src/main.py`: FastAPI lifespan, safe validation-error JSON, CORS, routing,
+  Uvicorn entry point. Blocking SQLite routes use `def` and FastAPI's thread pool.
+- `src/models.py`: Pydantic request validation, not ORM tables.
+- `src/db.py`: paths, casefold SQL function, connection cleanup. Writes commit
+  explicitly; SQLite's connection context manager does not close the connection.
+- `src/setup_db.py`, `src/reset_db.py`: dataset import and explicit replacement.
+- `src/routes/`: required endpoints and marked June extension.
+- `src/recommender.py`: collaborative filtering, no request-rating writes.
+
+This is a local classroom application without authentication, HTTPS configuration
+or a reverse proxy. Wildcard CORS permits non-credentialed browser access;
+it is not authorization. The frontend's API address is `API_BASE` in `index.js`.
+Change it if the backend runs on a different host. Table relationships are
+represented by IDs and joins; the schema does not declare foreign keys.
+
+## Checks
+
+Run from the repository root:
+
+```bash
+backend/venv/bin/python -m unittest discover -s backend/tests -v
+node tests/frontend.cjs
+node --check frontend/index.js
+bash -n start.sh shutdown.sh
 ```
+
+The backend checks use the real ASGI app and temporary databases, verify dataset
+import, endpoints, validation, CORS, tag rules, read-only recommendations and
+hand-calculated predictions. The frontend checks cover error handling and local
+state, including discarding outdated async results. Real rendering and browser
+networking require browser verification; the Node checks do not simulate a DOM.
+
+See [requirements check](../docs/requirements-check.md) and the
+[Greek oral-exam guide](../notes/exam-prep/00-index.md).
