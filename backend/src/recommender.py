@@ -2,7 +2,7 @@
 
 1. Find users with co-rated movies.
 2. Pearson similarity uses the means over those co-rated items only.
-3. Select the top K=30 usable similarities, including negative correlations.
+3. Select the top K=30 defined similarities, including zero and negative ones.
 4. Predict unseen items: mean_u + sum(sim * (rating_vi - mean_v)) / sum(abs(sim)).
    Here mean_u uses all submitted ratings; mean_v uses all the neighbour's
    dataset ratings. For each candidate, only neighbours who rated it contribute
@@ -28,13 +28,13 @@ def _pearson(u_vals, v_vals):
     """
     Pearson correlation coefficient of two equal-length rating vectors.
 
-    Returns 0.0 for insufficient overlap or when a vector has zero variance (e.g.
-    identical ratings on all co-rated movies). Pearson is undefined there;
-    zero is our sentinel for "no usable signal".
+    Returns None for insufficient overlap or when a vector has zero variance (e.g.
+    identical ratings on all co-rated movies): Pearson is undefined there. A
+    genuine 0.0 is a valid result and must stay distinct from "undefined".
     """
     n = len(u_vals)
     if n < MIN_COMMON or n != len(v_vals):
-        return 0.0
+        return None
     mean_u = sum(u_vals) / n
     mean_v = sum(v_vals) / n
 
@@ -43,7 +43,7 @@ def _pearson(u_vals, v_vals):
         sum((b - mean_v) ** 2 for b in v_vals)
     )
     if denom == 0:
-        return 0.0
+        return None
     return numerator / denom
 
 
@@ -89,7 +89,7 @@ def recommend(input_ratings):
                 [input_dict[m] for m in common],
                 [v_ratings[m] for m in common],
             )
-            if sim != 0:                      # zero contributes no prediction weight
+            if sim is not None:               # keep 0.0: it outranks negatives in top-K
                 similarities[v] = sim
 
         if not similarities:
@@ -133,7 +133,7 @@ def recommend(input_ratings):
         for movie_id, num in numerator.items():
             den = denominator[movie_id]
             if den == 0:
-                continue
+                continue                  # only zero-weight neighbours: undefined
             predictions.append((movie_id, mean_u + num / den))
 
         # --- Step 5: top-N by predicted rating --------------------------------

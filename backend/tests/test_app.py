@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import db
 import setup_db
 from main import app
-from recommender import _pearson, recommend
+from recommender import _pearson, recommend, TOP_K
 
 
 def request(method, url, body=None, headers=()):
@@ -119,7 +119,8 @@ class AppTest(unittest.TestCase):
         self.assertAlmostEqual(_pearson([5, 1], [4, 2]), 1)
         self.assertAlmostEqual(_pearson([5, 1], [1, 5]), -1)
         for left, right in [([], []), ([5], [4]), ([4, 4], [1, 5])]:
-            self.assertEqual(_pearson(left, right), 0)
+            self.assertIsNone(_pearson(left, right))
+        self.assertEqual(_pearson([1, 5, 3, 3], [3, 3, 1, 5]), 0)
         with db.get_db() as conn:
             conn.execute("DELETE FROM ratings")
             rows = [(1, 1, 5), (1, 2, 1), (1, 3, 5), (1, 4, 1), (2, 1, 1), (2, 2, 5), (2, 3, 1), (2, 5, 5), (3, 1, 4), (3, 2, 2), (3, 6, 5)]
@@ -129,6 +130,23 @@ class AppTest(unittest.TestCase):
         result = recommend([(1, 5), (2, 1)])
         self.assertEqual([(r["movieId"], r["predictedRating"]) for r in result], [(3, 5), (6, 4.33), (4, 1), (5, 1)])
         self.assertEqual(recommend([(1, 5), (2, 4)])[0]["predictedRating"], 6.5)
+
+    def test_zero_correlation_neighbours_outrank_negative_ones(self):
+        # Literal top-K: TOP_K users with a valid Pearson of exactly 0 fill N(u)
+        # ahead of a negatively correlated user, and zero total weight means no prediction.
+        with db.get_db() as conn:
+            conn.execute("DELETE FROM ratings")
+            rows = [(v, m, r) for v in range(1, TOP_K + 1) for m, r in [(1, 3), (2, 3), (3, 1), (4, 5), (5, 5)]]
+            rows += [(TOP_K + 1, 1, 5), (TOP_K + 1, 2, 1), (TOP_K + 1, 6, 5)]
+            conn.executemany("INSERT INTO ratings VALUES (?, ?, ?, 0)", rows)
+            conn.commit()
+        ratings = [(1, 1), (2, 5), (3, 3), (4, 3)]
+        self.assertEqual(recommend(ratings), [])
+        with db.get_db() as conn:
+            conn.execute("DELETE FROM ratings WHERE userId = ?", (TOP_K,))
+            conn.commit()
+        # A free slot admits the sim -1 user: movie 6 predicts 3 - (5 - 11/3); movie 5 stays undefined.
+        self.assertEqual([(r["movieId"], r["predictedRating"]) for r in recommend(ratings)], [(6, 1.67)])
 
     def test_empty_cold_start_and_request_ratings_not_saved(self):
         before = Path(self.path).read_bytes()
@@ -164,7 +182,7 @@ class AppTest(unittest.TestCase):
             return rows + [rows[0]] if filename == "movies.csv" else rows
 
         files_before = set(Path(self.directory.name).glob("*.db"))
-        with patch.object(setup_db, "DB_PATH", self.path), patch.object(setup_db, "BASE_DIR", self.directory.name), patch.object(setup_db, "_load_csv", side_effect=duplicate_movie):
+        with patch.object(setup_db, "DB_PATH", self.path), patch.object(setup_db, "BASE_DIR", self.directory.name), patch.object(setup_db, "DATA_DIR", str(Path(self.directory.name) / "ml-latest-small")), patch.object(setup_db, "_load_csv", side_effect=duplicate_movie):
             # Fail during INSERT, after the temporary database and tables exist.
             with self.assertRaises(sqlite3.IntegrityError):
                 setup_db.initialize_db(replace=True)

@@ -62,6 +62,16 @@ extension is absent from this branch's source code and UI.
 
 The study guide and PDF were written for `main`, which includes tag search.
 Skip the June-extension sections and tag-search exercise on this branch; the
-Spring API and general theory still apply. Older study aids, UML diagrams
-and `20012.zip` describe earlier versions and have been preserved as historical
-material. The archive has not been refreshed or submitted.
+Spring API and general theory still apply. Older study aids and UML diagrams
+describe earlier versions and have been preserved as historical material.
+
+## Submission package
+
+[`20012.zip`](20012.zip) contains the current `september-exam` source, including
+the Pearson zero-correlation fix, without exam extensions. It includes the three
+frontend files, backend source and setup instructions, dependencies, bundled
+dataset, launch scripts, tests and license. The database is created on first
+startup; virtual environments, generated files and study material are excluded.
+See `backend/README.md` inside the archive for setup and validation commands.
+The archive was checked after extraction into a clean folder; it has not been
+submitted to the course.

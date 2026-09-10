@@ -82,7 +82,7 @@ Submitted ratings are **never stored**. Browser ratings disappear on refresh.
 
 1. Find users with overlapping rated movies.
 2. Compute Pearson over co-rated vectors, with means restricted to those vectors.
-3. Retain the top **K=30** nonzero usable correlations, including negative ones.
+3. Retain the top **K=30** defined correlations, including zero and negative ones.
 4. For each unseen candidate, calculate
    `mean_u + sum(sim * (rating_vi - mean_v)) / sum(abs(sim))`.
 5. Rank raw predictions, break ties by movie ID, and return at most **N=10**,
@@ -91,8 +91,9 @@ Submitted ratings are **never stored**. Browser ratings disappear on refresh.
 The prediction uses the input user's overall mean and each neighbour's overall
 dataset mean. Both sums include only neighbours who rated that candidate;
 missing ratings are not zero. Fewer than two shared movies, zero variance or
-no usable weights may produce an empty result. Zero correlation contributes
-no weight and is omitted. Neighbour ties use user ID.
+no usable weights may produce an empty result. A valid zero correlation
+occupies a top-K slot ahead of negative ones but contributes no weight, so a
+candidate rated only by such neighbours is skipped. Neighbour ties use user ID.
 
 There is no extra support filter or score clamping. The formula can predict
 outside the input scale 0.5-5; the frontend explains this. Empty, single-rating

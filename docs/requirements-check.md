@@ -34,9 +34,10 @@ The three-table database remains intact: Spring page 1 explicitly requires
   rather than introducing an unspecified movie-existence endpoint check.
 - MovieLens input ratings use half-star steps. Duplicate request movie IDs are
   invalid. Empty recommendation lists remain accepted by the API.
-- Pearson requires two co-rated items and nonzero variance. Zero weights are
-  omitted. K=30 and N=10 are allowed choices. Negative nonzero correlations are
-  retained when they fall within top-K. Both prediction sums use only neighbours
+- Pearson requires two co-rated items and nonzero variance; undefined values
+  are excluded, valid zeros are ranked. K=30 and N=10 are allowed choices.
+  Negative correlations are retained when they fall within top-K; candidates
+  whose total weight is zero are skipped. Both prediction sums use only neighbours
   with a rating for the candidate; scores are ranked before rounding and are not
   clipped. The previous support filter and positive-only/clamped outputs were
   additional behaviour beyond the supplied formula and have been removed.
@@ -54,7 +55,7 @@ cases invoke ASGI with temporary databases. The environment's socket restriction
 prevented the first thread-pool test run from completing; rerunning outside that
 restriction completed successfully.
 
-On `september-exam`, all 8 backend cases and the frontend/syntax checks were
+On `september-exam`, all 9 backend cases and the frontend/syntax checks were
 rerun successfully. OpenAPI exposes exactly the four required method/path
 operations; GET and POST to the former tag-search URL return 404. A fresh browser
 preview confirmed that the tag-search section is absent and the remaining
@@ -73,7 +74,22 @@ Responsive layout was inspected at 375, 768 and 1280 pixels before branching.
 The user's working database has not been rebuilt. PDF pages were rendered and
 checked when the guide was created.
 
-The existing `20012.zip`, old study notes and old UML diagrams are historical
-artifacts; they are not a freshly packaged submission. Current setup and API
-instructions are in the updated README. The Greek guide also covers the June
-extension on `main`; skip its June sections and tag-search exercise here.
+`20012.zip` was rebuilt on 11 September from the current `september-exam` source,
+including the Pearson zero-correlation fix. It contains the required frontend
+and backend files, bundled dataset, launch scripts, tests and license. Archive
+integrity and source-byte comparisons passed. The packaged backend README omits
+links to repository-only study material. Generated databases, virtual
+environments, caches and study files are excluded.
+
+After extraction into a clean folder, all 9 backend tests, frontend logic checks
+and JavaScript/shell syntax checks passed using the existing installed runtimes.
+This check exposed a test that depended on previously extracted CSVs; its rebuild
+fixture now uses the temporary dataset created by the test suite. The packaged
+setup script also created a fresh database with 9742 movies, 100836 ratings and
+3683 tags, and SQLite's integrity check passed. No clean dependency installation
+or new browser walkthrough was performed for packaging. The archive has not
+been submitted to the course.
+
+Old study notes and UML diagrams remain historical material. The Greek guide
+also covers the June extension on `main`; skip its June sections and tag-search
+exercise here.
