@@ -160,7 +160,6 @@ tbody tr:last-child td {
 .table-scroll { overflow-x: auto; }
 form { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 input { max-width: 100%; min-width: 0; }
-small { font-size: 0.75em; font-weight: normal; }
 button:disabled { opacity: 0.6; cursor: wait; }
 :focus-visible { outline: 3px solid var(--c1); outline-offset: 3px; }
 

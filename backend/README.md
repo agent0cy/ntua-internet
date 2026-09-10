@@ -1,7 +1,7 @@
 # MovieLens backend
 
-FastAPI + SQLite for the Spring 2026 assignment, with the June 2026 tag-search
-extension retained and marked by ten-dash start/end comments.
+FastAPI + SQLite for `WebApp_Dev_Assignment_Spring_2026.pdf`.
+The `september-exam` branch exposes only the four required API operations.
 
 ## Setup and run
 
@@ -29,8 +29,9 @@ after setup, then open <http://localhost:8080>.
 The bundled `ml-latest-small.zip` supplies the dataset; no download is needed.
 On first startup, `initialize_db()` creates `movies`, `ratings` and `tags`
 with the corresponding CSV columns and imports all data rows: **9,742 movies,
-100,836 ratings, 3,683 tags**. The June sheet's 3,684 figure differs from the
-bundled CSV's data-row count. Existing databases may contain added movies.
+100,836 ratings, 3,683 tags**. The Spring assignment requires all three tables,
+including `tags`, even though it has no tag-search endpoint.
+Existing databases may contain added movies.
 
 From `backend/`, `python src/setup_db.py` also initializes the database.
 If the database already exists, it is preserved. Imports build a temporary
@@ -75,20 +76,6 @@ are validated structurally, but not checked for database existence: unknown
 IDs provide no overlap and still contribute to the input user's mean.
 Submitted ratings are **never stored**. Browser ratings disappear on refresh.
 
-<!-- ---------- June 2026 extension starts ---------- -->
-### Tag-search extension
-
-`POST /tags/movies` accepts `{"search":"funny"}` and returns
-`{status:"success",movies:[{movieId,title,genres,matchingTag},...]}`.
-
-After stripping surrounding whitespace, a keyword under five characters must
-match the entire tag. At least five characters compares the first five
-characters on both sides. Comparisons use Unicode case folding. Blank input
-returns 422. A movie with several matching tags appears once; `matchingTag`
-is one of those tags, selected with SQL `MIN`. This operation is a **POST**
-because the June assignment explicitly requires it, even though it only reads.
-<!-- ---------- June 2026 extension finishes ---------- -->
-
 ## Recommendation algorithm
 
 `recommender.py` follows the formula in the Spring assignment, page 3:
@@ -120,7 +107,8 @@ at least two familiar movies with different scores.
 - `src/db.py`: paths, casefold SQL function, connection cleanup. Writes commit
   explicitly; SQLite's connection context manager does not close the connection.
 - `src/setup_db.py`, `src/reset_db.py`: dataset import and explicit replacement.
-- `src/routes/`: required endpoints and marked June extension.
+- `src/routes/`: only the four Spring API operations, in `movies.py` and
+  `recommendations.py`.
 - `src/recommender.py`: collaborative filtering, no request-rating writes.
 
 This is a local classroom application without authentication, HTTPS configuration
@@ -141,8 +129,9 @@ bash -n start.sh shutdown.sh
 ```
 
 The backend checks use the real ASGI app and temporary databases, verify dataset
-import, endpoints, validation, CORS, tag rules, read-only recommendations and
-hand-calculated predictions. The frontend checks cover error handling and local
+import, the exact Spring API contract, validation, CORS, absence of the former
+tag-search endpoint, read-only recommendations and hand-calculated predictions.
+The frontend checks cover error handling and local
 state, including discarding outdated async results. Real rendering and browser
 networking require browser verification; the Node checks do not simulate a DOM.
 

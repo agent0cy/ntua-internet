@@ -12,7 +12,7 @@ function feedback(id, message, isError = false) {
 }
 
 // The table template is trusted markup; database strings are untrusted text.
-// Let the DOM escape text instead of interpreting movie titles/tags as HTML.
+// Let the DOM escape text instead of interpreting movie titles/genres as HTML.
 function escapeHtml(value) {
     const span = document.createElement("span");
     span.textContent = value;
@@ -150,44 +150,6 @@ function rateMovie(movieId, value) {
     myRatings[movieId] = { title: searchedMovies[movieId].title, rating };
     showMyRatings(); // No HTTP request, INSERT, or persistent browser storage.
 }
-
-// ---------- June 2026 extension starts ----------
-async function searchByTag() {
-    const keyword = document.getElementById("tag-search-input").value.trim();
-    const button = document.getElementById("tag-search-button");
-    const tbody = document.getElementById("tag-search-results");
-    if (button.disabled) return;
-    if (!keyword) {
-        tbody.replaceChildren();
-        feedback("tag-search-feedback", "Please type a tag keyword.", true);
-        return;
-    }
-    button.disabled = true;
-    feedback("tag-search-feedback", "Searching tags...");
-    try {
-        // POST is explicitly required by the June paper even though this is a read.
-        const data = await callApi("/tags/movies", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ search: keyword }),
-        });
-        let html = "";
-        for (const movie of data.movies) {
-            html += "<tr><td>" + movie.movieId + "</td>";
-            html += "<td>" + escapeHtml(movie.title) + "</td>";
-            html += "<td>" + escapeHtml(movie.genres) + "</td>";
-            html += "<td>" + escapeHtml(movie.matchingTag) + "</td></tr>";
-        }
-        tbody.innerHTML = html;
-        feedback("tag-search-feedback", "Found " + data.movies.length + " movie(s) with matching tags.");
-    } catch (error) {
-        tbody.replaceChildren();
-        feedback("tag-search-feedback", error.message, true);
-    } finally {
-        button.disabled = false;
-    }
-}
-// ---------- June 2026 extension finishes ----------
 
 function showMyRatings() {
     const ids = Object.keys(myRatings); // Object property names (IDs) are strings.

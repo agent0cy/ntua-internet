@@ -35,12 +35,3 @@ class RecommendationRequest(BaseModel):
         if len({r.movieId for r in ratings}) != len(ratings):
             raise ValueError("Each movieId must appear only once")
         return ratings
-
-
-# ---------- June 2026 extension starts ----------
-class TagMoviesRequest(BaseModel):
-    """Body for POST /tags/movies; blank searches are not useful keywords."""
-
-    model_config = ConfigDict(str_strip_whitespace=True)
-    search: str = Field(min_length=1)
-# ---------- June 2026 extension finishes ----------

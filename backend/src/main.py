@@ -9,9 +9,6 @@ from fastapi.responses import JSONResponse
 
 from db import init_database
 from routes import movies, recommendations
-# ---------- June 2026 extension starts ----------
-from routes import tags
-# ---------- June 2026 extension finishes ----------
 
 API_PREFIX = "/movielens/api"
 
@@ -50,9 +47,6 @@ app.add_middleware(
 # Synchronous def handlers run in FastAPI's thread pool because sqlite3 blocks.
 app.include_router(movies.router, prefix=API_PREFIX)
 app.include_router(recommendations.router, prefix=API_PREFIX)
-# ---------- June 2026 extension starts ----------
-app.include_router(tags.router, prefix=API_PREFIX)
-# ---------- June 2026 extension finishes ----------
 
 
 if __name__ == "__main__":

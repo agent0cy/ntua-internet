@@ -110,20 +110,10 @@ class AppTest(unittest.TestCase):
             self.assertEqual(self.api("POST", "/recommendations", {"ratings": [{"movieId": movie_id, "rating": 4.5}]})[0], 422)
         self.assertEqual(self.api("POST", "/recommendations", {"ratings": [{"movieId": 1, "rating": 4}, {"movieId": 1, "rating": 5}]})[0], 422)
 
-    def test_tag_extension_rules_and_deduplication(self):
-        with db.get_db() as conn:
-            conn.execute("DELETE FROM tags")
-            conn.executemany("INSERT INTO tags VALUES (?, ?, ?, ?)", [(1, 1, "ABCD", 0), (2, 2, "abcde-one", 0), (3, 2, "ABCDE-two", 0), (4, 3, "abcdf", 0), (5, 4, "ΑΘΗΝΑ-test", 0)])
-            conn.commit()
-        cases = [("abcd", [1]), ("ABCDE", [2]), ("abcde-extra", [2]), ("abcdf", [3]), ("αθηνα", [4]), ("%", []), ("' OR 1=1 --", [])]
-        for term, ids in cases:
-            status, result = self.api("POST", "/tags/movies", {"search": term})
-            self.assertEqual(status, 200)
-            self.assertEqual(sorted(m["movieId"] for m in result["movies"]), ids)
-            for movie in result["movies"]:
-                self.assertIn("matchingTag", movie)
-        self.assertEqual(self.api("POST", "/tags/movies", {"search": " "})[0], 422)
-        self.assertEqual(self.api("GET", "/tags/movies")[0], 405)
+    def test_tag_search_extension_is_absent(self):
+        # The Spring assignment requires the tags table, but no tag-search API.
+        for method in ("GET", "POST"):
+            self.assertEqual(self.api(method, "/tags/movies", {"search": "funny"})[0], 404)
 
     def test_pearson_and_prediction_formula(self):
         self.assertAlmostEqual(_pearson([5, 1], [4, 2]), 1)
@@ -158,7 +148,12 @@ class AppTest(unittest.TestCase):
         self.assertIn(b"POST", headers[b"access-control-allow-methods"])
         status, _, payload = request("GET", "/openapi.json")
         self.assertEqual(status, 200)
-        self.assertEqual(len(json.loads(payload)["paths"]), 4)
+        paths = json.loads(payload)["paths"]
+        self.assertEqual({path: set(operations) for path, operations in paths.items()}, {
+            "/movielens/api/movies": {"get", "post"},
+            "/movielens/api/ratings/{movie_id}": {"get"},
+            "/movielens/api/recommendations": {"post"},
+        })
 
     def test_failed_rebuild_preserves_database(self):
         before = Path(self.path).read_bytes()

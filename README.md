@@ -6,6 +6,11 @@ A web app over the MovieLens "latest-small" dataset: search movies, add movies,
 rate them in page memory, view average ratings, and get personalized
 recommendations. FastAPI + SQLite backend, vanilla HTML/CSS/JS frontend.
 
+The `september-exam` branch implements only
+`WebApp_Dev_Assignment_Spring_2026.pdf`. It has the four required API operations
+and no exam extensions. The `tags` table is still imported because the Spring
+assignment explicitly requires it. The version with tag search remains on `main`.
+
 ## Quick start
 
 First-time setup (installs the backend dependencies into a virtualenv):
@@ -48,13 +53,15 @@ historical architecture diagrams; use the new exam guide below for current flows
 
 The Spring 2026 requirements are checked in
 [docs/requirements-check.md](docs/requirements-check.md). The June tag-search
-extension is retained and clearly marked in code and UI.
+extension is absent from this branch's source code and UI.
 
 - [Greek oral-exam PDF](output/pdf/MovieLens_Oral_Exam_Guide_GR.pdf): 168 questions
   with answers, 16 DevTools drills, worked recommendations and three mock exams.
 - [Editable study notes and source map](notes/exam-prep/00-index.md).
 - [Validation commands and API details](backend/README.md).
 
-Use the new guide for the current implementation. Older study aids, UML diagrams
+The study guide and PDF were written for `main`, which includes tag search.
+Skip the June-extension sections and tag-search exercise on this branch; the
+Spring API and general theory still apply. Older study aids, UML diagrams
 and `20012.zip` describe earlier versions and have been preserved as historical
 material. The archive has not been refreshed or submitted.

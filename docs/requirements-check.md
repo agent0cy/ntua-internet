@@ -1,10 +1,10 @@
-# Assignment check - 10 September 2026
+# Assignment check - september-exam - 11 September 2026
 
-Checked against all four pages of `WebApp_Dev_Assignment_Spring_2026.pdf` and
-both pages of `WebApp_Dev_exams_assignment_2026_06.pdf`. The supplied Downloads
-copy of the spring sheet is byte-identical to the repository copy. The June
-extension is retained at the user's request. No new exam-period specification
-was supplied, so the Spring sheet remains the base contract.
+Checked against all four pages of `WebApp_Dev_Assignment_Spring_2026.pdf`.
+This branch implements the Spring assignment without exam extensions. The June
+tag-search router, request model, JavaScript handler and UI have been removed.
+The three-table database remains intact: Spring page 1 explicitly requires
+`movies`, `ratings` and `tags`. The extended version remains on `main`.
 
 | Requirement | Implementation and evidence |
 |---|---|
@@ -21,7 +21,7 @@ was supplied, so the Spring sheet remains the base contract.
 | Display dataset average | Browser sums GET ratings; Toy Story shows 3.92 from 215 ratings |
 | Clear labels, guidance, errors, tables | Labelled native forms, live feedback, scrollable tables, keyboard focus |
 | JSON errors distinguished from network errors | Shared `callApi` and non-finite-safe 422 handler; regression checks |
-| June tag POST + matching rule + matchingTag | Marked route/model/UI; exact/prefix/case/deduplication checks |
+| Only the four Spring API operations | Exact OpenAPI method/path check; former tag endpoint returns 404 |
 | Setup/readme/dependencies/import scripts | Updated `backend/README.md`, tested dependency versions and setup/reset |
 | Explain and extend code | Concise code comments, 168-question Greek guide, 16 DevTools drills, mock extensions |
 
@@ -40,12 +40,11 @@ was supplied, so the Spring sheet remains the base contract.
   with a rating for the candidate; scores are ranked before rounding and are not
   clipped. The previous support filter and positive-only/clamped outputs were
   additional behaviour beyond the supplied formula and have been removed.
-- Surrounding spaces in add/tag input are stripped. No new authentication,
+- Surrounding spaces in add-movie input are stripped. No new authentication,
   persistent user ratings, frontend libraries or unrelated product features
   were added. The backend dependencies already installed in the environment are
   pinned directly; this is not a full transitive dependency lockfile.
-- The bundled tags CSV has 3683 data rows. The June sheet says 3684; importing the
-  actual records faithfully takes precedence over inventing a record.
+- The bundled tags CSV has 3683 data rows, all retained as required by Spring.
 
 ## Verification
 
@@ -55,17 +54,26 @@ cases invoke ASGI with temporary databases. The environment's socket restriction
 prevented the first thread-pool test run from completing; rerunning outside that
 restriction completed successfully.
 
-Browser checks used `http://localhost:8080` with a temporary copy of the database
+On `september-exam`, all 8 backend cases and the frontend/syntax checks were
+rerun successfully. OpenAPI exposes exactly the four required method/path
+operations; GET and POST to the former tag-search URL return 404. A fresh browser
+preview confirmed that the tag-search section is absent and the remaining
+recommendation guidance works, with no console errors or warnings. The full
+browser CRUD/recommendation flow was not repeated for this removal-only change.
+
+The original browser checks on the shared Spring functionality used
+`http://localhost:8080` with a temporary copy of the database
 behind port 3000. Verified title search, 3.92/215 average, local rating submission,
-10 recommendations, June tag search, 201 creation, escaped stored markup and
+10 recommendations, 201 creation, escaped stored markup and
 clearing ratings on reload. API logs show the expected GETs and preflight
 OPTIONS followed by POST. Browser console showed no errors in these flows.
 After intentionally stopping the temporary API, search showed the expected
 backend-unavailable message and restored the Search button.
-Responsive layout was inspected at 375, 768 and 1280 pixels. No external
-submission, commit, push, publication or rebuild of the user's working database
-was performed. PDF pages were rendered and checked separately.
+Responsive layout was inspected at 375, 768 and 1280 pixels before branching.
+The user's working database has not been rebuilt. PDF pages were rendered and
+checked when the guide was created.
 
 The existing `20012.zip`, old study notes and old UML diagrams are historical
-artifacts; they are not a freshly packaged submission. The current instructions
-and code map are in the updated README and `notes/exam-prep/`.
+artifacts; they are not a freshly packaged submission. Current setup and API
+instructions are in the updated README. The Greek guide also covers the June
+extension on `main`; skip its June sections and tag-search exercise here.

@@ -43,27 +43,6 @@
                 <tbody id="search-results"></tbody>
             </table></div>
 
-            <!-- ---------- June 2026 extension UI starts ---------- -->
-            <h2>Search by tag <small>(June 2026 extension)</small></h2>
-            <p>Under 5 characters: exact tag match. At least 5: match the first 5 characters. Case-insensitive.</p>
-            <form onsubmit="event.preventDefault(); searchByTag()">
-                <label for="tag-search-input">Tag</label><input id="tag-search-input" required />
-                <button id="tag-search-button" type="submit">Search tags</button>
-            </form>
-            <p role="status" aria-live="polite" id="tag-search-feedback"></p>
-            <div class="table-scroll" tabindex="0" role="region" aria-label="Tag search results"><table>
-                <thead>
-                    <tr>
-                        <th scope="col">ID</th>
-                        <th scope="col">Title</th>
-                        <th scope="col">Genres</th>
-                        <th scope="col">Matching tag</th>
-                    </tr>
-                </thead>
-                <tbody id="tag-search-results"></tbody>
-            </table></div>
-            <!-- ---------- June 2026 extension UI finishes ---------- -->
-
             <!-- 3. YOUR RATINGS -->
             <h2>Your ratings (<span id="ratings-count">0</span>)</h2>
             <p>Select a score, then click Submit. These ratings stay in page memory and disappear on refresh; they are never saved to the database.</p>
